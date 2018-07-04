@@ -8,8 +8,9 @@ import tensorflow as tf
 projectDir = os.path.dirname(os.path.realpath(__file__))
 
 imgW, imgH = 28, 28
-encodingDims = [imgW * imgH, 225, 64]
-# encodingDims = [imgW * imgH, imgW * imgH]
+codeW, codeH = 28, 28
+# encodingDims = [imgW * imgH, 225, 64]
+encodingDims = [imgW * imgH, codeW * codeH]
 decodingDims = list(reversed(encodingDims))
 
 learningRate = 0.01
@@ -63,12 +64,12 @@ with tf.Session() as session:
             epochLoss += batchLoss
 
         print("EPOCH:", epoch + 1)
-        print("LR:    ", learningRate)
+        print("LR:   ", learningRate)
         print("LOSS: ", epochLoss / (numTrain // batchSize), "\n")
 
         if epoch == 0 or epoch % 50 == 0:
-            if epochLoss > prevLoss:
-                learningRate = learningRate ** 2
+            if epochLoss > prevLoss * 0.99:
+                learningRate = learningRate / 10
             prevLoss = epochLoss
             rand = random.randint(0, numTrain - 1)
             original, compressed, reconstructed = session.run(
@@ -76,7 +77,7 @@ with tf.Session() as session:
             )
             plt.imshow(original.reshape(imgW, imgH), cmap='Greys')
             plt.savefig(projectDir + "/original.png")
-            plt.imshow(compressed.reshape(8, 8), cmap='Greys')
+            plt.imshow(compressed.reshape(codeW, codeH), cmap='Greys')
             plt.savefig(projectDir + "/compressed.png")
             plt.imshow(reconstructed.reshape(imgW, imgH), cmap='Greys')
             plt.savefig(projectDir + "/reconstructed.png")
