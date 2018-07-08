@@ -1,83 +1,95 @@
-import os
-import random
-
-import matplotlib.pyplot as plt
-import numpy as np
 import tensorflow as tf
 
-projectDir = os.path.dirname(os.path.realpath(__file__))
 
-imgW, imgH = 28, 28
-codeW, codeH = 28, 28
-# encodingDims = [imgW * imgH, 225, 64]
-encodingDims = [imgW * imgH, codeW * codeH]
-decodingDims = list(reversed(encodingDims))
+class Autoencoder:
 
-learningRate = 0.01
-batchSize = 250
-numEpochs = 100000
+    def __init__(self, encoderDims):
+        self.encoderDims = encoderDims
+        self.decoderDims = list(reversed(encoderDims))
+        self.input = tf.placeholder(tf.float32, [None, encoderDims[0]])
 
-trainImages = np.loadtxt(projectDir + "/Data/fashion-mnist_train.csv", delimiter=',', skiprows=1)[:, 1:]
-testImages = np.loadtxt(projectDir + "/Data/fashion-mnist_test.csv", delimiter=',', skiprows=1)[:, 1:]
-numTrain = len(trainImages)
-numTest = len(testImages)
+        self.session = tf.Session()
+        self.activationFunction = tf.nn.sigmoid             # Allow to be specified
+        self.lossFunction = tf.losses.mean_squared_error    # Allow to be specified
+        self.learningRate = tf.placeholder(tf.float32, [])
+        self.SGD = tf.train.AdamOptimizer(self.learningRate)
 
-encoderWeights, encoderBiases = [], []
-decoderWeights, decoderBiases = [], []
-for layer in range(len(encodingDims) - 1):
-    encoderWeights.append(
-        tf.Variable(tf.random_normal([encodingDims[layer], encodingDims[layer + 1]]))
-    )
-    encoderBiases.append(
-        tf.Variable(tf.random_normal([encodingDims[layer + 1]]))
-    )
-    decoderWeights.append(
-        tf.Variable(tf.random_normal([decodingDims[layer], decodingDims[layer + 1]]))
-    )
-    decoderBiases.append(
-        tf.Variable(tf.random_normal([decodingDims[layer + 1]]))
-    )
+        self.__buildNetwork()
+        self.__buildTensorFlowGraph()
 
-input = tf.placeholder(tf.float32, [None, imgW * imgH])
-encoded = input
-for layer in range(len(encodingDims) - 1):
-    encoded = tf.add(tf.matmul(encoded, encoderWeights[layer]), encoderBiases[layer])
-    encoded = tf.nn.sigmoid(encoded)
+        self.session.run(tf.global_variables_initializer())
+        self.session.graph.finalize()
 
-decoded = encoded
-for layer in range(len(decodingDims) - 1):
-    decoded = tf.add(tf.matmul(decoded, decoderWeights[layer]), decoderBiases[layer])
-    if layer != len(decodingDims) - 2:
-        decoded = tf.nn.sigmoid(decoded)
-
-loss = tf.losses.mean_squared_error(labels=input, predictions=decoded)
-train = tf.train.AdamOptimizer(learningRate).minimize(loss)
-
-with tf.Session() as session:
-    session.run(tf.global_variables_initializer())
-    prevLoss = 99999999999
-    for epoch in range(numEpochs):
-        epochLoss = 0
-        for batch in range(numTrain // batchSize):
-            batchInput = trainImages[batch * batchSize: (batch + 1) * batchSize]
-            _, batchLoss = session.run([train, loss], {input: batchInput})
-            epochLoss += batchLoss
-
-        print("EPOCH:", epoch + 1)
-        print("LR:   ", learningRate)
-        print("LOSS: ", epochLoss / (numTrain // batchSize), "\n")
-
-        if epoch == 0 or epoch % 50 == 0:
-            if epochLoss > prevLoss * 0.99:
-                learningRate = learningRate / 10
-            prevLoss = epochLoss
-            rand = random.randint(0, numTrain - 1)
-            original, compressed, reconstructed = session.run(
-                [input, encoded, decoded], {input: [trainImages[rand]]}
+    def __buildNetwork(self):
+        self.encoderWeights, self.encoderBiases = [], []
+        self.decoderWeights, self.decoderBiases = [], []
+        for layer in range(len(self.encoderDims) - 1):
+            self.encoderWeights.append(
+                tf.Variable(tf.random_normal([self.encoderDims[layer], self.encoderDims[layer + 1]]))
             )
-            plt.imshow(original.reshape(imgW, imgH), cmap='Greys')
-            plt.savefig(projectDir + "/original.png")
-            plt.imshow(compressed.reshape(codeW, codeH), cmap='Greys')
-            plt.savefig(projectDir + "/compressed.png")
-            plt.imshow(reconstructed.reshape(imgW, imgH), cmap='Greys')
-            plt.savefig(projectDir + "/reconstructed.png")
+            self.encoderBiases.append(
+                tf.Variable(tf.random_normal([self.encoderDims[layer + 1]]))
+            )
+            self.decoderWeights.append(
+                tf.Variable(tf.random_normal([self.decoderDims[layer], self.decoderDims[layer + 1]]))
+            )
+            self.decoderBiases.append(
+                tf.Variable(tf.random_normal([self.decoderDims[layer + 1]]))
+            )
+
+    def __buildTensorFlowGraph(self):
+        self.encoded = self.encode()
+        self.decoded = self.decode()
+        self.loss = self.__calculateLoss()
+        self.train = self.SGD.minimize(self.loss)
+
+    def encode(self):
+        encoded = self.input
+        for layer in range(len(self.encoderDims) - 1):
+            encoded = tf.add(tf.matmul(encoded, self.encoderWeights[layer]), self.encoderBiases[layer])
+            encoded = self.activationFunction(encoded)
+        return encoded
+
+    def decode(self):
+        decoded = self.encoded
+        for layer in range(len(self.decoderDims) - 1):
+            decoded = tf.add(tf.matmul(decoded, self.decoderWeights[layer]), self.decoderBiases[layer])
+            if layer != len(self.decoderDims) - 2:
+                decoded = self.activationFunction(decoded)
+        return decoded
+
+    def __calculateLoss(self):
+        return self.lossFunction(labels=self.input, predictions=self.decoded)
+
+    def setBatch(self, input, learningRate=0.0):
+        self.batchDict = {
+            self.input: input,
+            self.learningRate: learningRate
+        }
+
+    def run(self, operations=None, train=False):
+        if not type(operations) is list:
+            operations = [operations]
+
+        if train:
+            ops = [self.train]
+        else:
+            ops = []
+
+        if operations is not None:
+            for op in operations:
+                if op == 'input':
+                    ops.append(self.input)
+                if op == 'encoded':
+                    ops.append(self.encoded)
+                if op == 'decoded':
+                    ops.append(self.decoded)
+                if op == 'loss':
+                    ops.append(self.loss)
+
+        if (train and len(ops) == 2) or (not train and len(ops) == 1):
+            return self.session.run(ops, self.batchDict)[-1]
+        elif train:
+            return self.session.run(ops, self.batchDict)[1:]
+        else:
+            return self.session.run(ops, self.batchDict)
