@@ -9,18 +9,19 @@ class Autoencoder:
         self.input = tf.placeholder(tf.float32, [None, encoderDims[0]])
 
         self.session = tf.Session()
-        self.activationFunction = tf.nn.sigmoid             # Allow to be specified
-        self.lossFunction = tf.losses.mean_squared_error    # Allow to be specified
+        self.activationFunction = tf.nn.sigmoid                 # Allow to be specified
+        self.lossFunction = tf.losses.mean_squared_error        # Allow to be specified
         self.learningRate = tf.placeholder(tf.float32, [])
-        self.SGD = tf.train.AdamOptimizer(self.learningRate)
+        self.SGD = tf.train.AdamOptimizer(self.learningRate)    # Allow to be specified
 
-        self.__buildNetwork()
-        self.__buildTensorFlowGraph()
+        self.__buildNetwork()           # Constructs Encoder & Decoder
+        self.__buildTensorFlowGraph()   # Creates sequential TensorFlow operations
 
-        self.session.run(tf.global_variables_initializer())
-        self.session.graph.finalize()
+        self.session.run(tf.global_variables_initializer())     # Initialise weights
+        self.session.graph.finalize()                           # Ensures no operations are duplicated for each batch (avoids memory leaks)
 
     def __buildNetwork(self):
+        # Lists of weights and biases per layer of encoder and decoder
         self.encoderWeights, self.encoderBiases = [], []
         self.decoderWeights, self.decoderBiases = [], []
         for layer in range(len(self.encoderDims) - 1):
@@ -28,18 +29,18 @@ class Autoencoder:
                 tf.Variable(tf.random_normal([self.encoderDims[layer], self.encoderDims[layer + 1]]))
             )
             self.encoderBiases.append(
-                tf.Variable(tf.random_normal([self.encoderDims[layer + 1]]))
+                tf.Variable(tf.zeros([self.encoderDims[layer + 1]]))
             )
             self.decoderWeights.append(
                 tf.Variable(tf.random_normal([self.decoderDims[layer], self.decoderDims[layer + 1]]))
             )
             self.decoderBiases.append(
-                tf.Variable(tf.random_normal([self.decoderDims[layer + 1]]))
+                tf.Variable(tf.zeros([self.decoderDims[layer + 1]]))
             )
 
     def __buildTensorFlowGraph(self):
-        self.encoded = self.encode()
-        self.decoded = self.decode()
+        self.encoded = self.encode()        # Encoded/compressed data
+        self.decoded = self.decode()        # Decoded/reconstructed data
         self.loss = self.__calculateLoss()
         self.train = self.SGD.minimize(self.loss)
 
@@ -54,7 +55,7 @@ class Autoencoder:
         decoded = self.encoded
         for layer in range(len(self.decoderDims) - 1):
             decoded = tf.add(tf.matmul(decoded, self.decoderWeights[layer]), self.decoderBiases[layer])
-            if layer != len(self.decoderDims) - 2:
+            if layer != len(self.decoderDims) - 2:          # Keep output layer linear
                 decoded = self.activationFunction(decoded)
         return decoded
 
@@ -68,6 +69,8 @@ class Autoencoder:
         }
 
     def run(self, operations=None, train=False):
+        # Returns values of specified list of operations
+        # Trains network's parameters if specified
         if not type(operations) is list:
             operations = [operations]
 
