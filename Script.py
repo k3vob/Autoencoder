@@ -11,8 +11,8 @@ learningRate = 0.001
 batchSize = 250
 numEpochs = 100000
 
-trainImages = np.loadtxt(projectDir + "/Data/fashion-mnist_train.csv", delimiter=',', skiprows=1)[:, 1:]
-testImages = np.loadtxt(projectDir + "/Data/fashion-mnist_test.csv", delimiter=',', skiprows=1)[:, 1:]
+trainImages = np.loadtxt(projectDir + "/Data/Images/fashion-mnist_train.csv", delimiter=',', skiprows=1)[:, 1:]
+testImages = np.loadtxt(projectDir + "/Data/Images/fashion-mnist_test.csv", delimiter=',', skiprows=1)[:, 1:]
 numTrain = len(trainImages)
 numTest = len(testImages)
 
@@ -87,13 +87,13 @@ with tf.Session() as session:
                 [input, encoded, decoded], {input: [trainImages[rand]]}
             )
             plt.imshow(original.reshape(imgW, imgH), cmap='Greys')
-            plt.savefig(projectDir + "/Data/original.png")
+            plt.savefig(projectDir + "/Data/Images/original.png")
             plt.clf()
             plt.imshow(compressed.reshape(codeW, codeH), cmap='Greys')
-            plt.savefig(projectDir + "/Data/compressed.png")
+            plt.savefig(projectDir + "/Data/Images/compressed.png")
             plt.clf()
             plt.imshow(reconstructed.reshape(imgW, imgH), cmap='Greys')
-            plt.savefig(projectDir + "/Data/reconstructed.png")
+            plt.savefig(projectDir + "/Data/Images/reconstructed.png")
             plt.clf()
 
             # TEST IMAGE
@@ -102,11 +102,11 @@ with tf.Session() as session:
                 [input, encoded, decoded], {input: [testImages[rand]]}
             )
             plt.imshow(original.reshape(imgW, imgH), cmap='Greys')
-            plt.savefig(projectDir + "/Data/originalTest.png")
+            plt.savefig(projectDir + "/Data/Images/originalTest.png")
             plt.clf()
             plt.imshow(compressed.reshape(codeW, codeH), cmap='Greys')
-            plt.savefig(projectDir + "/Data/compressedTest.png")
+            plt.savefig(projectDir + "/Data/Images/compressedTest.png")
             plt.clf()
             plt.imshow(reconstructed.reshape(imgW, imgH), cmap='Greys')
-            plt.savefig(projectDir + "/Data/reconstructedTest.png")
+            plt.savefig(projectDir + "/Data/Images/reconstructedTest.png")
             plt.clf()

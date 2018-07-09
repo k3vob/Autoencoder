@@ -1,3 +1,5 @@
+import os
+
 import tensorflow as tf
 
 
@@ -6,19 +8,21 @@ class Autoencoder:
     def __init__(self, encoderDims):
         self.encoderDims = encoderDims
         self.decoderDims = list(reversed(encoderDims))
-        self.input = tf.placeholder(tf.float32, [None, encoderDims[0]])
 
-        self.session = tf.Session()
+        self.input = tf.placeholder(tf.float32, [None, encoderDims[0]])
+        self.learningRate = tf.placeholder(tf.float32, [])
+
         self.activationFunction = tf.nn.sigmoid                 # Allow to be specified
         self.lossFunction = tf.losses.mean_squared_error        # Allow to be specified
-        self.learningRate = tf.placeholder(tf.float32, [])
         self.SGD = tf.train.AdamOptimizer(self.learningRate)    # Allow to be specified
 
         self.__buildNetwork()           # Constructs Encoder & Decoder
         self.__buildTensorFlowGraph()   # Creates sequential TensorFlow operations
 
+        self.session = tf.Session()
         self.session.run(tf.global_variables_initializer())     # Initialise weights
-        self.session.graph.finalize()                           # Ensures no operations are duplicated for each batch (avoids memory leaks)
+        self.saver = tf.train.Saver()
+        self.session.graph.finalize()                           # Avoids memory leaks by ensuring no operations are duplicated per batch
 
     def __buildNetwork(self):
         # Lists of weights and biases per layer of encoder and decoder
@@ -34,9 +38,10 @@ class Autoencoder:
             self.decoderWeights.append(
                 tf.Variable(tf.random_normal([self.decoderDims[layer], self.decoderDims[layer + 1]]))
             )
-            self.decoderBiases.append(
-                tf.Variable(tf.zeros([self.decoderDims[layer + 1]]))
-            )
+            if layer != len(self.decoderDims) - 2:  # NO BIAS IN OUTPUT LAYER ##################################
+                self.decoderBiases.append(
+                    tf.Variable(tf.zeros([self.decoderDims[layer + 1]]))
+                )
 
     def __buildTensorFlowGraph(self):
         self.encoded = self.encode()        # Encoded/compressed data
@@ -54,13 +59,21 @@ class Autoencoder:
     def decode(self):
         decoded = self.encoded
         for layer in range(len(self.decoderDims) - 1):
-            decoded = tf.add(tf.matmul(decoded, self.decoderWeights[layer]), self.decoderBiases[layer])
+            decoded = tf.matmul(decoded, self.decoderWeights[layer])
             if layer != len(self.decoderDims) - 2:          # Keep output layer linear
+                decoded = tf.add(decoded, self.decoderBiases[layer])
                 decoded = self.activationFunction(decoded)
         return decoded
 
     def __calculateLoss(self):
-        return self.lossFunction(labels=self.input, predictions=self.decoded)
+        nonZeros = tf.where(tf.greater(self.input, 0))
+        return tf.sqrt(
+            self.lossFunction(
+                labels=tf.gather(self.input, nonZeros),
+                predictions=tf.gather(self.decoded, nonZeros)
+            )
+        )
+        # return self.lossFunction(labels=self.input, predictions=self.decoded)
 
     def setBatch(self, input, learningRate=0.0):
         self.batchDict = {
@@ -96,3 +109,16 @@ class Autoencoder:
             return self.session.run(ops, self.batchDict)[1:]
         else:
             return self.session.run(ops, self.batchDict)
+
+    def save(self, modelName="Autoencoder"):
+        modelName += '.ckpt'
+        dir = os.path.dirname(os.path.realpath(__file__)) + '/SavedModels/'
+        self.saver.save(self.session, dir + modelName)
+
+    def restore(self, modelName="Autoencoder"):
+        modelName += '.ckpt'
+        dir = os.path.dirname(os.path.realpath(__file__)) + '/SavedModels/'
+        self.saver.restore(self.session, dir + modelName)
+
+    def kill(self):
+        self.session.close()

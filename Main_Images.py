@@ -6,8 +6,8 @@ from Model import Autoencoder
 
 projectDir = os.path.dirname(os.path.realpath(__file__))
 
-trainImages = np.loadtxt(projectDir + "/Data/fashion-mnist_train.csv", delimiter=',', skiprows=1)[:, 1:]
-testImages = np.loadtxt(projectDir + "/Data/fashion-mnist_test.csv", delimiter=',', skiprows=1)[:, 1:]
+trainImages = np.loadtxt(projectDir + "/Data/Images/fashion-mnist_train.csv", delimiter=',', skiprows=1)[:, 1:]
+testImages = np.loadtxt(projectDir + "/Data/Images/fashion-mnist_test.csv", delimiter=',', skiprows=1)[:, 1:]
 numTrain = len(trainImages)
 numTest = len(testImages)
 
