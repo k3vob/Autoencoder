@@ -72,8 +72,8 @@ class Autoencoder:
         return decoded
 
     def __calculateLoss(self):
-        # nonZeros = tf.where(tf.greater(self.input, 0))
-        # return tf.sqrt(
+        # nonZeros = tf.where(tf.greater(self.input, 0))            # Only calculates loss on
+        # return tf.sqrt(                                           # non-zero input values
         #     self.lossFunction(
         #         labels=tf.gather(self.input, nonZeros),
         #         predictions=tf.gather(self.decoded, nonZeros)
