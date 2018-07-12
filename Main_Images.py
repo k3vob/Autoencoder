@@ -13,7 +13,8 @@ numTest = len(testImages)
 
 learningRate = 0.001
 batchSize = 250
-numEpochs = 50
+numEpochs = 100
+tied = True
 
 imgW = imgH = 28
 encoderDims = [
@@ -22,9 +23,10 @@ encoderDims = [
     (imgW // 3) * (imgH // 3),
     (imgW // 4) * (imgH // 4)
 ]
+
 codeW = codeH = int(np.sqrt(encoderDims[-1]))
 
-ae = Autoencoder(encoderDims)
+ae = Autoencoder(encoderDims, tied)
 
 for epoch in range(numEpochs):
     epochLoss = 0
