@@ -6,6 +6,10 @@ import tensorflow as tf
 class Autoencoder:
 
     def __init__(self, encoderDims):
+        # Include input dimension as first value in list
+        # e.g.  encoderDims = [1000, 500, 250]
+        #       would result in an autoencoder with architecture of
+        #       [1000, 500, 250, 500, 1000]
         self.encoderDims = encoderDims
         self.decoderDims = list(reversed(encoderDims))
 
