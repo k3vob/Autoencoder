@@ -10,6 +10,6 @@ Deep autoencoder model built in TensorFlow with support for noisy and/or sparse 
 - ~Add support for sparse input data.~
 - Add regularisation techniques.
 
-#### Original, encoded, and reconstructed/denoised images:
+### Original, encoded, and reconstructed/denoised images:
 
 ![alt text](https://i.imgur.com/QyES7ct.png "autoencoder")
