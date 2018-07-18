@@ -1,3 +1,6 @@
+# #########################################
+# BUGGY - LOSS VALUE IS TOO GOOD TO BE TRUE
+# #########################################
 import os
 import random
 
@@ -7,10 +10,11 @@ import pandas as pd
 
 from Model import Autoencoder
 
-numEpochs = 1
+numEpochs = 10000
 batchSize = 10
 
 projectDir = os.path.dirname(os.path.realpath(__file__))
+
 
 # userId, movieId, rating,
 # allratings = np.loadtxt(projectDir + "/Data/Movies/ratings.csv", delimiter=',', skiprows=1)[:, :-1]
@@ -43,16 +47,14 @@ testDF = pd.DataFrame(testDF)
 
 num = trainDF.shape[0]
 
-# encoderDims = [
-#     df.shape[1],
-#     df.shape[1] // 2,
-#     df.shape[1] // 4,
-#     df.shape[1] // 6,
-# ]
+encoderDims = [
+    df.shape[1],
+    df.shape[1] // 2,
+    df.shape[1] // 4,
+    df.shape[1] // 6,
+]
 
-encoderDims = [df.shape[1], 500]
-
-ae = Autoencoder(encoderDims)
+ae = Autoencoder(encoderDims, scarceInput=True)
 
 learningRate = 0.01
 

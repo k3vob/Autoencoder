@@ -14,6 +14,7 @@ numEpochs = 10000
 tied = False
 denoise = True
 step = 50
+newModel = True
 
 # trainImages = np.loadtxt(projectDir + "/Data/Images/fashion-mnist_train.csv", delimiter=',', skiprows=1)[:, 1:]
 # testImages = np.loadtxt(projectDir + "/Data/Images/fashion-mnist_test.csv", delimiter=',', skiprows=1)[:, 1:]
@@ -36,8 +37,10 @@ codeW = codeH = int(np.sqrt(encoderDims[-1]))
 
 ae = Autoencoder(encoderDims, tied, denoise)
 
-bestLoss = 1022
-# ae.restore()
+bestLoss = 9999
+if not newModel:
+    ae.restore()
+
 for epoch in range(numEpochs):
     epochLoss = 0
     for batch in range(numTrainBatches):

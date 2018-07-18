@@ -5,20 +5,21 @@ import tensorflow as tf
 
 class Autoencoder:
 
-    def __init__(self, encoderDims, tiedWeights=False, denoise=False):
+    def __init__(self, encoderDims, scarceInput=False, tiedWeights=False, denoise=False):
         self.encoderDims = encoderDims
         self.decoderDims = list(reversed(encoderDims))
+        self.scarceInput = scarceInput
         self.tiedWeights = tiedWeights
-        self.denoise = denoise
+        self.denoise = denoise          # Only works for greyscale image data
 
         self.input = tf.placeholder(tf.float32, [None, encoderDims[0]])
         self.learningRate = tf.placeholder(tf.float32, [])
 
-        self.activationFunction = tf.nn.sigmoid                 # Allow to be specified
+        self.activationFunction = tf.nn.sigmoid                 # Allow to be specified by user
         # self.activationFunction = tf.tanh
         # self.activationFunction = tf.nn.selu
-        self.lossFunction = tf.losses.mean_squared_error        # Allow to be specified
-        self.SGD = tf.train.AdamOptimizer(self.learningRate)    # Allow to be specified
+        self.lossFunction = tf.losses.mean_squared_error        # Allow to be specified by user
+        self.SGD = tf.train.AdamOptimizer(self.learningRate)    # Allow to be specified by user
 
         if self.denoise:
             self.__addNoise()
@@ -28,9 +29,12 @@ class Autoencoder:
         self.session = tf.Session()
         self.session.run(tf.global_variables_initializer())     # Initialise weights & biases
         self.saver = tf.train.Saver()
-        # self.session.graph.finalize()                           # Avoids memory leaks through duplicating graph nodes
+        self.session.graph.finalize()                           # Avoids memory leaks through duplicating graph nodes
 
     def __addNoise(self):
+        # Create a tensor of random numbers with unit variance
+        # Then sets pixels to black where values of random tensor > 1
+        # (i.e. all values outside the std dev -> ~32% of pixels)
         random = tf.random_normal(tf.shape(self.input))
         mask = tf.greater(random, 1.0)
         self.noisyInput = tf.where(mask, tf.ones_like(self.input) * 255, self.input)
@@ -85,14 +89,16 @@ class Autoencoder:
         return decoded
 
     def __calculateLoss(self):
-        # nonZeros = tf.where(tf.greater(self.input, 0))            # Only calculates loss on
-        # return tf.sqrt(                                           # non-zero input values
-        #     self.lossFunction(
-        #         labels=tf.gather(self.input, nonZeros),
-        #         predictions=tf.gather(self.decoded, nonZeros)
-        #     )
-        # )
-        return self.lossFunction(labels=self.input, predictions=self.decoded)
+        if self.scarceInput:
+            nonZeros = tf.where(tf.greater(self.input, 0))            # Only calculates RMSE on
+            return tf.sqrt(                                           # non-zero input values
+                self.lossFunction(
+                    labels=tf.gather(self.input, nonZeros),
+                    predictions=tf.gather(self.decoded, nonZeros)
+                )
+            )
+        else:
+            return self.lossFunction(labels=self.input, predictions=self.decoded)
 
     def setBatch(self, input, learningRate=0.0):
         self.batchDict = {
