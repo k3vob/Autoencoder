@@ -54,7 +54,7 @@ encoderDims = [
     df.shape[1] // 6,
 ]
 
-ae = Autoencoder(encoderDims, scarceInput=True)
+ae = Autoencoder(encoderDims, sparseInput=True)
 
 learningRate = 0.01
 

@@ -5,10 +5,10 @@ import tensorflow as tf
 
 class Autoencoder:
 
-    def __init__(self, encoderDims, scarceInput=False, tiedWeights=False, denoise=False):
+    def __init__(self, encoderDims, sparseInput=False, tiedWeights=False, denoise=False):
         self.encoderDims = encoderDims
         self.decoderDims = list(reversed(encoderDims))
-        self.scarceInput = scarceInput
+        self.sparseInput = sparseInput
         self.tiedWeights = tiedWeights
         self.denoise = denoise          # Only works for greyscale image data
 
@@ -89,7 +89,7 @@ class Autoencoder:
         return decoded
 
     def __calculateLoss(self):
-        if self.scarceInput:
+        if self.sparseInput:
             nonZeros = tf.where(tf.greater(self.input, 0))            # Only calculates RMSE on
             return tf.sqrt(                                           # non-zero input values
                 self.lossFunction(

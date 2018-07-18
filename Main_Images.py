@@ -11,7 +11,6 @@ projectDir = os.path.dirname(os.path.realpath(__file__))
 learningRate = 0.001
 batchSize = 250
 numEpochs = 10000
-tied = False
 denoise = True
 step = 50
 newModel = True
@@ -35,7 +34,7 @@ encoderDims = [
 
 codeW = codeH = int(np.sqrt(encoderDims[-1]))
 
-ae = Autoencoder(encoderDims, tied, denoise)
+ae = Autoencoder(encoderDims, denoise=denoise)
 
 bestLoss = 9999
 if not newModel:
