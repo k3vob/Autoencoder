@@ -12,4 +12,4 @@ Deep autoencoder model built in TensorFlow with support for noisy and/or sparse 
 
 # Original, encoded, and reconstructed/denoised images:
 
-![alt text](https://imgur.com/a/HfXyLeD "")
+![alt text](https://i.imgur.com/QyES7ct.png "autoencoder")
