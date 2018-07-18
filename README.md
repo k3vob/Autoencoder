@@ -8,3 +8,4 @@ Deep autoencoder model built in TensorFlow with support for noisy and/or sparse 
 - ~Add denoising abilities.~
 - Add functionality to create a stacked autoencoder by training the model layer-by-layer.
 - ~Add support for sparse input data.~
+- Add regularisation techniques.
