@@ -5,26 +5,35 @@ import tensorflow as tf
 
 class Autoencoder:
 
-    def __init__(self, encoderDims, tiedWeights=False):
+    def __init__(self, encoderDims, tiedWeights=False, denoise=False):
         self.encoderDims = encoderDims
         self.decoderDims = list(reversed(encoderDims))
         self.tiedWeights = tiedWeights
+        self.denoise = denoise
 
         self.input = tf.placeholder(tf.float32, [None, encoderDims[0]])
         self.learningRate = tf.placeholder(tf.float32, [])
 
-        # self.activationFunction = tf.nn.sigmoid                 # Allow to be specified
-        self.activationFunction = tf.tanh
+        self.activationFunction = tf.nn.sigmoid                 # Allow to be specified
+        # self.activationFunction = tf.tanh
+        # self.activationFunction = tf.nn.selu
         self.lossFunction = tf.losses.mean_squared_error        # Allow to be specified
         self.SGD = tf.train.AdamOptimizer(self.learningRate)    # Allow to be specified
 
+        if self.denoise:
+            self.__addNoise()
         self.__buildNetwork()           # Constructs Encoder & Decoder
         self.__buildTensorFlowGraph()   # Creates sequential TensorFlow operations
 
         self.session = tf.Session()
         self.session.run(tf.global_variables_initializer())     # Initialise weights & biases
         self.saver = tf.train.Saver()
-        self.session.graph.finalize()                           # Avoids memory leaks through duplicating graph nodes
+        # self.session.graph.finalize()                           # Avoids memory leaks through duplicating graph nodes
+
+    def __addNoise(self):
+        random = tf.random_normal(tf.shape(self.input))
+        mask = tf.greater(random, 1.0)
+        self.noisyInput = tf.where(mask, tf.ones_like(self.input) * 255, self.input)
 
     def __buildNetwork(self):
         # Lists of weights and biases per layer of encoder and decoder
@@ -55,11 +64,15 @@ class Autoencoder:
         self.train = self.SGD.minimize(self.loss)
 
     def encode(self):
-        encoded = self.input
+        if self.denoise:
+            encoded = self.noisyInput
+        else:
+            encoded = self.input
         for layer in range(len(self.encoderDims) - 1):
             encoded = tf.matmul(encoded, self.encoderWeights[layer])
             encoded = tf.add(encoded, self.encoderBiases[layer])
-            encoded = self.activationFunction(encoded)
+            if layer != len(self.encoderDims) - 2:
+                encoded = self.activationFunction(encoded)
         return encoded
 
     def decode(self):
@@ -102,6 +115,8 @@ class Autoencoder:
             for op in operations:
                 if op == 'input':
                     ops.append(self.input)
+                if op == 'noisyInput':
+                    ops.append(self.noisyInput)
                 if op == 'encoded':
                     ops.append(self.encoded)
                 if op == 'decoded':
