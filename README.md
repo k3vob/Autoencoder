@@ -14,6 +14,6 @@ This repo contains a deep autoencoder model built in TensorFlow with support for
 
 ## Sample use:
 
-Below shows the process of the model learning to take noisy/corrupted imaged data of handwritten letters as input, encode the data to ~6% of its original size, and then reconstruct it while removing all noise.
+Below shows the process of the model learning to take noisy/corrupted image data of handwritten letters as input, encode the data to ~6% of its original size, and then reconstruct it while removing all noise.
 
 ![alt text](https://i.imgur.com/QyES7ct.png "autoencoder")
